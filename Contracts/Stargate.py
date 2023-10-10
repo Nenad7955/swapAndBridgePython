@@ -1,12 +1,12 @@
-from ContractBase import ContractBase
+from Contracts.ContractBase import ContractBase
 
 
 class Stargate(ContractBase):
-    def __init__(self, web3, priv_key, my_addr, stargate_address):
-        super().__init__(web3, priv_key, my_addr, "../abi/stargate.json")
+    def __init__(self, web3, accounts, stargate_address):
+        super().__init__(web3, accounts, "./abi/stargate.json")
 
         self.contract = web3.eth.contract(address=stargate_address, abi=self.abi)
-        self.lzTxObj = [0, 0, "0x0000000000000000000000000000000000000001"]
+        self.lzTxObj = [0, 0, "0x0000000000000000000000000000000000000001".encode()]
 
     def calculate_fee(self, target_chain_id):
         return self.contract.functions.quoteLayerZeroFee(
@@ -22,13 +22,13 @@ class Stargate(ContractBase):
             target_chain_id,
             src_pool_id,
             target_pool_id,
-            self.my_addr,  # refund
+            self.my_addr(),  # refund
             amount,
             0,  # min amount... can check router for better
             self.lzTxObj,
-            self.my_addr,  # recipient
+            self.my_addr(),  # recipient
             "0x".encode(),  # no payload
         ).build_transaction({
-            "from": self.my_addr, "nonce": self.get_nonce(), "value": self.calculate_fee(amount)
+            "from": self.my_addr(), "nonce": self.get_nonce(), "value": self.calculate_fee(target_chain_id)
         })
         self.send_tx(tx)

@@ -1,16 +1,15 @@
-from ContractBase import ContractBase
+from Contracts.ContractBase import ContractBase
 
 DEADLINE = 10000000000000
 
 
 class SushiSwap(ContractBase):
 
-    def __init__(self, web3, priv_key, my_addr, tokenA, tokenB, router):
-        super().__init__(web3, priv_key, my_addr, "../abi/abi.json")
+    def __init__(self, web3, accounts, tokenA, tokenB, router):
+        super().__init__(web3, accounts, "./abi/router.json")
         self.tokenA = tokenA  # can change to path = [tokenA, tokenB]
         self.tokenB = tokenB
         self.router = router
-        self.my_addr = my_addr
 
         self.contract = self.web3.eth.contract(address=router, abi=self.abi)
 
@@ -25,9 +24,9 @@ class SushiSwap(ContractBase):
         tx = (
             # error shows up with the other function without FeeOnTransferTokens
             self.contract.functions.swapExactTokensForETHSupportingFeeOnTransferTokens(
-                amount, amount_out, [self.tokenB, self.tokenA], self.my_addr, DEADLINE)
+                amount, amount_out, [self.tokenB, self.tokenA], self.my_addr(), DEADLINE)
             .build_transaction({
-                "from": self.my_addr, "nonce": self.get_nonce()
+                "from": self.my_addr(), "nonce": self.get_nonce(), "gas": 300000
             }))
         self.send_tx(tx)
 
@@ -35,9 +34,9 @@ class SushiSwap(ContractBase):
         amount_out = self.calc_amount_out(amount)
         tx = (
             self.contract.functions.swapExactETHForTokens(
-                amount_out, [self.tokenA, self.tokenB], self.my_addr, DEADLINE)
+                amount_out, [self.tokenA, self.tokenB], self.my_addr(), DEADLINE)
             .build_transaction({
-                "from": self.my_addr, "nonce": self.get_nonce(), "value": amount
+                "from": self.my_addr(), "nonce": self.get_nonce(), "value": amount
             }))
         self.send_tx(tx)
 
@@ -45,8 +44,8 @@ class SushiSwap(ContractBase):
         value = self.calc_amount_in(amount)
         tx = (
             self.contract.functions.swapETHForExactTokens(
-                amount, [self.tokenA, self.tokenB], self.my_addr, DEADLINE)
+                amount, [self.tokenA, self.tokenB], self.my_addr(), DEADLINE)
             .build_transaction({
-                "from": self.my_addr, "nonce": self.get_nonce(), "value": value
+                "from": self.my_addr(), "nonce": self.get_nonce(), "value": value, "gas": 200000
             }))
         self.send_tx(tx)
